@@ -23,15 +23,19 @@ AdaHat::AdaHat(int boardPosition)
 void AdaHat::setup() {
 
   // called this way, it uses the default address 0x40
-  Adafruit_PWMServoDriver _pwm = Adafruit_PWMServoDriver();
+  //Adafruit_PWMServoDriver _pwm = Adafruit_PWMServoDriver();
   // you can also call it with a different address you want
-  //Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x41);
+  _pwm0 = Adafruit_PWMServoDriver(0x40);
+  _pwm1 = Adafruit_PWMServoDriver(0x41);
   // you can also call it with a different address and I2C interface
   //Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(&Wire, 0x40);
 
-  _pwm.begin();
-  
-  _pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+  _pwm0.begin();
+  _pwm0.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+
+
+  _pwm1.begin();
+  _pwm1.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
   delay(10);
 }
@@ -58,7 +62,12 @@ void AdaHat::setServoDegrees(int position, int degrees) {
 
   int pulseLength = map(degrees, 0, 180, currentMin, currentMax);
 
-  _pwm.setPWM(position, 0, pulseLength);
+  if (position < 16) {
+    _pwm0.setPWM(position, 0, pulseLength);
+  } 
+  if (position >= 16) {
+    _pwm1.setPWM(position-16, 0, pulseLength);
+  }
   
 }
 
@@ -70,7 +79,12 @@ void AdaHat::turnOffIdleServos() {
   for (int pin = 0; pin < 16; pin++) {
     if (millis() > _lastUpdated[pin] + 5000) {
       // turn off pin
-      _pwm.setPWM(pin, 0, 4096);
+      if (pin < 16) {
+        _pwm0.setPWM(pin, 0, 4096);
+      }
+      if (pin >= 16) {
+        _pwm1.setPWM(pin-16, 0, 4096);
+      }
     }
   }
 }
