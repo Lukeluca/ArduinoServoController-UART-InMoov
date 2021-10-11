@@ -23,6 +23,14 @@
   RM    - Right Middle
   RR    - Right Ring
   RP    - Right Pinky
+  
+  LW    - Left Wrist Twist
+  
+  LT    - Left Thumb
+  LI    - Left Index
+  LM    - Left Middle
+  LR    - Left Ring
+  LP    - Left Pinky
 
   This class is responsible for making sure the
   amounts do not cause the servos to exceed their
@@ -76,6 +84,19 @@
 
 #define PIN_INVERT PIN_RIGHT_MIDDLE
 
+// LEFT ARM PINS
+#define PIN_LEFT_THUMB 15
+#define PIN_LEFT_INDEX 16
+#define PIN_LEFT_MIDDLE 17
+#define PIN_LEFT_RING 18
+#define PIN_LEFT_PINKY 19
+
+#define PIN_LEFT_WRIST 20
+
+//#define PIN_INVERT PIN_LEFT_MIDDLE
+
+
+
 // The minimum and maximum servo values (in the 0-180 range) for each servo
 // The UART commands will turn the 0-100 range into this range
 #define HEAD_TWIST_MIN 40 // to the right
@@ -108,6 +129,25 @@
 #define RIGHT_WRIST_MIN 40
 #define RIGHT_WRIST_MAX 120
 
+//LEFT
+#define LEFT_THUMB_MIN 10
+#define LEFT_THUMB_MAX 100
+
+#define LEFT_INDEX_MIN 0
+#define LEFT_INDEX_MAX 80
+
+#define LEFT_MIDDLE_MIN 40 // some issues with this servo
+#define LEFT_MIDDLE_MAX 140
+
+#define LEFT_RING_MIN 20
+#define LEFT_RING_MAX 165
+
+#define LEFT_PINKY_MIN 45
+#define LEFT_PINKY_MAX 165
+
+#define LEFT_WRIST_MIN 40
+#define LEFT_WRIST_MAX 120
+
 AdaHat hat(0);
 
 void setup() {
@@ -126,6 +166,7 @@ void setup() {
   hat.setupServo(PIN_RIGHT_RING,        SERVO_UNCALIBRATED_DEFAULT_MIN, SERVO_UNCALIBRATED_DEFAULT_MAX);
   hat.setupServo(PIN_RIGHT_PINKY,       SERVO_UNCALIBRATED_DEFAULT_MIN, SERVO_UNCALIBRATED_DEFAULT_MAX);
   hat.setupServo(PIN_RIGHT_WRIST,       SERVO_UNCALIBRATED_DEFAULT_MIN, SERVO_UNCALIBRATED_DEFAULT_MAX);
+  //TODO: Setup left arm
 }
 
 
@@ -216,8 +257,12 @@ void processCommands() {
         Serial.print(value, DEC);
         Serial.println("%");
 
-        sendCommand(servo, value, relative);
-
+        
+        if (strcmp(servo,"DP") == 0) {
+          setDefaultPositions();
+        } else {
+          sendCommand(servo, value, relative);
+        }
         
         // Find the next command in input string
         command = strtok(NULL, " ");
@@ -225,6 +270,35 @@ void processCommands() {
     
     
     newData = false;
+  }
+}
+
+void setDefaultPositions() {
+  int pinAmount = 10;
+  int pins[pinAmount] = { 
+    PIN_HEAD_TWIST,
+    PIN_HEAD_VERT,
+    PIN_HEAD_MOUTH,
+    PIN_RIGHT_BICEP_TWIST,
+    PIN_RIGHT_THUMB,
+    PIN_RIGHT_INDEX,
+    PIN_RIGHT_MIDDLE,
+    PIN_RIGHT_RING,
+    PIN_RIGHT_PINKY,
+    PIN_RIGHT_WRIST
+//    PIN_LEFT_THUMB,
+//    PIN_LEFT_INDEX,
+//    PIN_LEFT_MIDDLE,
+//    PIN_LEFT_RING,
+//    PIN_LEFT_PINKY,
+//    PIN_LEFT_WRIST
+  }; // TODO: Include left when ready
+
+  
+  for (int i = 0; i < sizeof(pins) -1; i++) {
+    int servo_min = getServoMin(pins[i]);
+    int servo_max = getServoMax(pins[i]);
+    hat.setServoDegrees(pins[i], getCalculatedDegreesFromPercentage(50, servo_min, servo_max));
   }
 }
 
@@ -297,6 +371,17 @@ int getControlPin(char servo[]) {
 
   if (strcmp(servo,"RW") == 0) return PIN_RIGHT_WRIST;
 
+//  if (strcmp(servo,"LB") == 0) return PIN_LEFT_BICEP_TWIST; // Not available
+  if (strcmp(servo,"LT") == 0) return PIN_LEFT_THUMB;
+  
+  if (strcmp(servo,"LI") == 0) return PIN_LEFT_INDEX;
+  if (strcmp(servo,"LM") == 0) return PIN_LEFT_MIDDLE;
+  if (strcmp(servo,"LR") == 0) return PIN_LEFT_RING;
+  if (strcmp(servo,"LP") == 0) return PIN_LEFT_PINKY;
+
+  if (strcmp(servo,"LW") == 0) return PIN_LEFT_WRIST;
+
+
   // error, none found
   return -1;
 }
@@ -316,6 +401,14 @@ int getServoMin(int servoPin) {
     case PIN_RIGHT_PINKY:   return RIGHT_PINKY_MIN;  break;
 
     case PIN_RIGHT_WRIST:   return RIGHT_WRIST_MIN;  break;
+
+    case PIN_LEFT_THUMB:    return LEFT_THUMB_MIN; break;
+    case PIN_LEFT_INDEX:   return LEFT_INDEX_MIN;  break;
+    case PIN_LEFT_MIDDLE:  return LEFT_MIDDLE_MIN; break;
+    case PIN_LEFT_RING:    return LEFT_RING_MIN;   break;
+    case PIN_LEFT_PINKY:   return LEFT_PINKY_MIN;  break;
+
+    case PIN_LEFT_WRIST:   return LEFT_WRIST_MIN;  break;
   }
   
   return 90; // safe default, hopefully
@@ -336,8 +429,16 @@ int getServoMax(int servoPin) {
     case PIN_RIGHT_PINKY:   return RIGHT_PINKY_MAX;  break;
 
     case PIN_RIGHT_WRIST:   return RIGHT_WRIST_MAX;  break;
+
+    
+    case PIN_LEFT_THUMB:   return  LEFT_THUMB_MAX; break;
+    case PIN_LEFT_INDEX:   return  LEFT_INDEX_MAX;  break;
+    case PIN_LEFT_MIDDLE:  return LEFT_MIDDLE_MAX; break;
+    case PIN_LEFT_RING:    return LEFT_RING_MAX;   break;
+    case PIN_LEFT_PINKY:   return LEFT_PINKY_MAX;  break;
+
+    case PIN_LEFT_WRIST:   return LEFT_WRIST_MAX;  break;
   }
   
   return 90; // safe default, hopefully
 }
-
