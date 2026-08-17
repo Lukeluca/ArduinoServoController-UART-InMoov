@@ -1,7 +1,7 @@
-/*************************************************** 
+/***************************************************
   This code provides an abstraction for an Adafruit
   16-channel PWM & Servo driver hat.
-  
+
   Pick one up today in the adafruit shop!
   ------> http://www.adafruit.com/products/815
 
@@ -41,50 +41,75 @@ void AdaHat::setup() {
 }
 
 
+// Guards every array access below - these arrays are indexed by raw channel
+// number, so an out-of-range pin would otherwise corrupt adjacent memory.
+bool AdaHat::isValidPosition(int position) {
+  return position >= 0 && position < ADAHAT_CHANNELS;
+}
+
 void AdaHat::setupServo(int position, int min, int max) {
 
-  if (position == -1) {
+  if (!isValidPosition(position)) {
     return;
   }
 
   _servoMins[position] = min;
   _servoMaxs[position] = max;
-  
+  _registered[position] = true;
+
 }
 
 void AdaHat::setServoDegrees(int position, int degrees) {
+
+  if (!isValidPosition(position)) {
+    return;
+  }
 
   int currentMin = _servoMins[position];
   int currentMax = _servoMaxs[position];
 
   _servoPoss[position] = degrees; // setting last position
   _lastUpdated[position] = millis();
+  _isOff[position] = false;
 
   int pulseLength = map(degrees, 0, 180, currentMin, currentMax);
 
   if (position < 16) {
     _pwm0.setPWM(position, 0, pulseLength);
-  } 
-  if (position >= 16) {
+  } else {
     _pwm1.setPWM(position-16, 0, pulseLength);
   }
-  
+
 }
 
 int AdaHat::getServoDegrees(int position) {
+  if (!isValidPosition(position)) {
+    return -1;
+  }
   return _servoPoss[position];
 }
 
 void AdaHat::turnOffIdleServos() {
-  for (int pin = 0; pin < 16; pin++) {
-    if (millis() > _lastUpdated[pin] + 5000) {
-      // turn off pin
+  // Covers both boards - this used to stop at channel 16, so the "pin >= 16"
+  // branch was dead code and the second board's servos never idled out.
+  for (int pin = 0; pin < ADAHAT_CHANNELS; pin++) {
+    // Skip channels with no servo on them, and ones already powered down.
+    // Without this the loop re-sent a shutoff to all 32 channels on every
+    // pass, flooding the I2C bus (and hitting board 1 even when it isn't
+    // plugged in) rather than sending one shutoff per idle period.
+    if (!_registered[pin] || _isOff[pin]) {
+      continue;
+    }
+
+    // Subtract rather than add, so this still behaves correctly when millis()
+    // rolls over (~49 days of uptime).
+    if (millis() - _lastUpdated[pin] >= ADAHAT_IDLE_TIMEOUT_MS) {
       if (pin < 16) {
         _pwm0.setPWM(pin, 0, 4096);
-      }
-      if (pin >= 16) {
+      } else {
         _pwm1.setPWM(pin-16, 0, 4096);
       }
+      _isOff[pin] = true;
     }
   }
 }
