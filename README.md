@@ -3,8 +3,8 @@
 Drive the servos of an [InMoov](http://inmoov.fr/) robot with short text commands over a
 serial port.
 
-Send `HH50` to center the head, or `RI+10` to curl the right index finger a little
-further. The Arduino handles the pulse-width math, enforces each servo's safe range, and
+Send `HH50` to center the head, or `RI-10` to curl the right index finger a little
+further closed. The Arduino handles the pulse-width math, enforces each servo's safe range, and
 powers down servos that have gone idle — so the host driving it (a Raspberry Pi, a laptop,
 anything that can open a serial port) never needs to know servo geometry.
 
@@ -235,7 +235,7 @@ def send(command):
 
 send("DP")             # everything to its default position
 send("HH50 HV50")      # head centered
-send("RI+15")          # curl the right index finger
+send("RI-15")          # curl the right index finger
 ```
 
 Two things to watch for: opening the port resets the board on most Arduinos, so wait for
