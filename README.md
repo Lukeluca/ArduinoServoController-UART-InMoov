@@ -103,9 +103,9 @@ sent on one line, separated by spaces, and are applied in order.
 ```
 HH50                     move the head to the center of its horizontal range
 HV20                     tilt the head to 20% of its vertical range
-RI+10                    curl the right index finger 10% further closed
-RI-25                    open the right index finger by 25%
-RT0 RI0 RM0 RR0 RP0      open the whole right hand at once
+RI+10                    open the right index finger a little further
+RI-25                    curl the right index finger 25% further closed
+RT0 RI0 RM0 RR0 RP0      close the whole right hand at once
 DP                       send every enabled servo to its default (50%) position
 ```
 
@@ -128,6 +128,13 @@ first, then applies the adjustment from there.
 | `RP` | Right Pinky | | |
 
 The six left-arm servos ship **disabled** — see [Configuring servos](#configuring-servos).
+
+> [!NOTE]
+> For the fingers, **`0` is always closed and `100` is always open** — every
+> finger, whichever way its servo happens to be mounted. That is what the
+> `inverted` column is for: it absorbs the mounting inside the firmware, so a
+> host never has to know that the right middle finger is built backwards. Three
+> of the examples above had this reversed in an earlier revision of this file.
 
 ### Responses
 
@@ -193,7 +200,7 @@ else — there are no parallel lookup functions to keep in sync.
 | `pin` | PCA9685 channel (`0`–`15` on board `0x40`, `16`–`31` on board `0x41`) |
 | `minDeg` / `maxDeg` | Safe travel limits in degrees. Command value `0` maps to `minDeg`, `100` to `maxDeg`. **This is the guard rail that stops a servo tearing a printed part apart** |
 | `minPulse` / `maxPulse` | This servo's calibrated pulse lengths (out of 4096) for 0° and 180°. `150`/`600` is a reasonable starting guess |
-| `inverted` | `true` if the servo is mounted backwards, so command `0` should drive its far end |
+| `inverted` | `true` if the servo is mounted backwards, so command `0` should drive the opposite pulse. Which physical end that is depends on the mounting — the flag exists to make a backwards-mounted joint agree with the others, not to name an end |
 | `enabled` | `false` for servos not yet wired or calibrated. They are never driven, and commands targeting them return `E102` |
 
 ### Calibrating a servo
